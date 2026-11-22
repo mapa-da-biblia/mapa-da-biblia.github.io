@@ -33,6 +33,7 @@ jobs:
           rep("'+3 Bônus Exclusivos',", "'Acesso imediato no seu e-mail',")
           rep('Garanta hoje o seu Mapa da Bíblia!', 'Comece hoje a entender a Bíblia de verdade!')
           rep('✝️ OFERTA ESPECIAL VÁLIDA HOJE', '✝️ PREÇO ESPECIAL SÓ HOJE')
+          rep('https://pay.mapadocatolico.com.br/checkout/mapa-da-biblia', 'https://pay.cakto.com.br/cy6j527_1359388')
           rep('QUERO\n                            O MEU! 📖', 'QUERO\n                            O MEU MAPA! 📖')
           s = s.replace('"../', '"./').replace("'../", "'./")
           a = s.index('Oferecemos as duas opções!'); b = s.index('</div>', a)
