@@ -1,0 +1,38 @@
+name: baixar-arquivos
+on:
+  push:
+    paths: [".github/workflows/assets.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  baixar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar imagens, estilos, politicas e video
+        run: |
+          set -e
+          O=https://www.mapadocatolico.com
+          mkdir -p imagens video
+          for f in style.css politica-cookies.html politica-privacidade.html politica-reembolso.html termos-de-uso.html; do
+            curl -sfL -A "Mozilla/5.0" "$O/$f" -o "$f"
+          done
+          for f in "01-carrossel.webp" "02-carrossel.webp" "04-carrossel.webp" "05-carrossel.webp" "06-carrossel.webp" "07-carrossel.webp" "Group-587-1-1024x680.webp" "avatar1.png" "avatar_maria_03.png" "eduardo-mendes.webp" "genesis-preview-1.webp" "image 416.png" "logo-pv-mdc-Dok6y-Bb.png" "mdb-capa-1.png" "mdb-capa-fisico.webp" "mockup-crono.webp" "mockup-inicial-f9smLW5K.png" "mockup-lectio-divina.webp" "mockup-whatsapp.webp" "panorama-estrutura-768x678.webp" "plano-preview.webp" "roberto-lima.webp" "st-1.webp" "st-10.webp" "st-11.webp" "st-12.webp" "st-13.webp" "st-14.webp" "st-15.webp" "st-16.webp" "st-2.webp" "st-3.webp" "st-4.webp" "st-5.webp" "st-6.webp" "st-7.webp" "st-8.webp" "st-9.webp"; do
+            curl -sfL -A "Mozilla/5.0" "$O/imagens/${f// /%20}" -o "imagens/$f"
+          done
+          V=https://cdn.converteai.net/b3f75e50-91c2-41a9-b5e6-4cde2919d601/68559e9999b48a16b6a84172
+          curl -sfL "$V/video_2.m3u8" -o /tmp/p.m3u8
+          : > /tmp/all.ts
+          for s in $(grep -v '^#' /tmp/p.m3u8); do curl -sfL "$V/$s" >> /tmp/all.ts; done
+          sudo apt-get install -y -qq ffmpeg > /dev/null
+          ffmpeg -loglevel error -y -i /tmp/all.ts -c copy -bsf:a aac_adtstoasc -movflags +faststart video/mapa-da-biblia.mp4
+          curl -sfL https://images.converteai.net/b3f75e50-91c2-41a9-b5e6-4cde2919d601/players/68559ea8bb5e4a0d08dca0ad/cover.jpg -o video/capa.jpg
+          ls -la . imagens video
+      - name: Salvar no repositorio
+        run: |
+          git config user.name "Mapa da Biblia"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Imagens, video e paginas de politica" || echo "nada novo"
+          git push
