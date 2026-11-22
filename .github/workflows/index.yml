@@ -1,0 +1,61 @@
+name: gerar-pagina
+on:
+  push:
+    paths: [".github/workflows/index.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gerar index.html a partir da pagina original
+        run: |
+          curl -sfL -A "Mozilla/5.0" https://www.mapadocatolico.com/mapa-da-biblia -o /tmp/orig.html
+          cat > /tmp/build.py <<'PYEOF'
+          # Gera index.html a partir da página original: sem bônus, só digital, R$ 27, vídeo local
+          import sys
+          s = open(sys.argv[1], encoding="utf-8").read()
+          def cut(a_mark, b_mark, novo=""):
+              global s
+              a = s.index(a_mark); b = s.index(b_mark, a); s = s[:a] + novo + s[b:]
+          def rep(old, new):
+              global s
+              assert old in s, old; s = s.replace(old, new)
+          cut('    <!-- Bônus -->', '    <!-- 7. Oferta/Assinatura -->')
+          cut('                    <!-- Plan Toggle -->', '                    <!-- Discount Banner -->', '                    <div class="mt-24"></div>\n\n')
+          rep('"price": "47.00"', '"price": "27.00"')
+          rep('R$ 47,00</p>', 'R$ 27,00</p>')
+          rep("value: 47.00,", "value: 27.00,")
+          rep("price: 'R$ 47,00',", "price: 'R$ 27,00',")
+          rep('<span>+3 Bônus Exclusivos</span>', '<span>Acesso imediato no seu e-mail</span>')
+          rep("'+3 Bônus Exclusivos',", "'Acesso imediato no seu e-mail',")
+          rep('Garanta hoje o seu Mapa da Bíblia!', 'Comece hoje a entender a Bíblia de verdade!')
+          rep('✝️ OFERTA ESPECIAL VÁLIDA HOJE', '✝️ PREÇO ESPECIAL SÓ HOJE')
+          rep('QUERO\n                            O MEU! 📖', 'QUERO\n                            O MEU MAPA! 📖')
+          s = s.replace('"../', '"./').replace("'../", "'./")
+          a = s.index('Oferecemos as duas opções!'); b = s.index('</div>', a)
+          s = s[:a] + '''É <strong>100% digital</strong>! Você recebe o Mapa da Bíblia em PDF para
+                                  baixar e acessar de onde quiser: celular, tablet ou computador. Se preferir, também pode
+                                  imprimir em casa.
+                              ''' + s[b:]
+          a = s.index('Para a <strong>Versão Digital</strong>, o acesso'); b = s.index('</div>', a)
+          s = s[:a] + '''O acesso chega no seu <strong>e-mail</strong> logo após a confirmação do pagamento
+                                  (confira se digitou o e-mail corretamente na hora da compra).
+                              ''' + s[b:]
+          a = s.index('<div id="vid_68559ea8bb5e4a0d08dca0ad"')
+          b = s.index('</script>', s.index('id="scr_68559ea8bb5e4a0d08dca0ad"')) + len('</script>')
+          s = s[:a] + '''<video src="./video/mapa-da-biblia.mp4" poster="./video/capa.jpg" controls playsinline preload="metadata"
+                              class="w-full h-auto rounded-2xl shadow-lg" style="aspect-ratio: 3 / 4; object-fit: cover;"></video>''' + s[b:]
+          open(sys.argv[2], "w", encoding="utf-8").write(s)
+          PYEOF
+          python3 /tmp/build.py /tmp/orig.html index.html
+          sha256sum index.html
+      - name: Salvar no repositorio
+        run: |
+          git config user.name "Mapa da Biblia"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Pagina de vendas" || echo "nada novo"
+          git push
